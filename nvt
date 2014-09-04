@@ -1,0 +1,55 @@
+#D = Ti
+D = O+
+LINK = ilink /nofree /debug
+
+all: nvt.dll nvt.lib tnvt.exe
+
+nvt.def: nvt
+          echo LIBRARY nvt                               > $*.def
+         @echo PROTMODE                                 >> $*.def
+         @echo EXPORTS                                  >> $*.def
+         @echo         NvtLoadFuncs  @1                 >> $*.def
+         @echo         NvtDropFuncs  @2                 >> $*.def
+         @echo         Telnet                           >> $*.def
+         @echo         Tget                             >> $*.def
+         @echo         Tput                             >> $*.def
+         @echo         Tctl                             >> $*.def
+         @echo         Tquit                            >> $*.def
+         @echo         nvt3270                          >> $*.def
+         @echo         nvtopen                          >> $*.def
+         @echo         nvtclose                         >> $*.def
+         @echo         nvtgets                          >> $*.def
+         @echo         nvtputs                          >> $*.def
+         @echo         nvtpeek                          >> $*.def
+         @echo         nvtcommand                       >> $*.def
+         @echo         nvtquery                         >> $*.def
+
+nvt.dll: rnvt.obj 3270.obj nvt.obj nvt.def
+         $(LINK) /a:2 /e:2 /nol /noi /noe /m /li \
+                 rnvt+3270+nvt,$@,, \
+                 rexx.lib+ \
+                 tcp32dll.lib+so32dll.lib, \
+                 $*.def
+
+nvt.lib: nvt.dll
+         -del $@
+         implib /nol /noi $@ $*.def
+
+nvt.obj: nvt.c nvt.h
+         icc /c /Ss /Q+ /$D /Rn /Ge- $*.c
+
+3270.obj: bsd\asc_ebc.c
+          icc /c /Ss /Q+ /$D /Rn /Ge- /Fo$@ $?
+
+rnvt.obj: rnvt.c
+          icc /c /Ss /Q+ /$D /Rn /Ge- $?
+
+tnvt.obj: tnvt.c
+          icc /c /Ss /Q+ /Ti /Gm+ /Tx+ $?
+
+tnvt.exe: tnvt.obj
+          $(LINK) /nol /noi /noe /m /li /pm:vio \
+                  $**,$@,, \
+                  nvt.lib+ \
+                  tcp32dll.lib+so32dll.lib, \
+                  nul.def
